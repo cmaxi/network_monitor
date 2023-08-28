@@ -1,6 +1,6 @@
 version: '3'
 services:
   web:
-    build: dockerfile
+    build: .
     ports: ["8005:8000"]
     volumes: ['/:/usr/src/app']
