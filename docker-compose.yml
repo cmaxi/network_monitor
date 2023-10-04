@@ -4,7 +4,7 @@ services:
     build: .
     ports: ["8005:8000"]
     volumes:
-      - .:/usr/src/app
+      - ./:/usr/src/app
     command: bash -c "python /usr/src/app/run.py"
 volumes:
   python:
