@@ -3,4 +3,3 @@ services:
   web:
     build: .
     ports: ["8005:8000"]
-#    command: bash -c "python /usr/src/app/run.py"

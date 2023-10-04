@@ -13,7 +13,7 @@ from sqlalchemy.orm import mapped_column
 from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy.orm import relationship
 from sqlalchemy import Table
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel
 
 
 from modules.models import BaseTask, BaseResponse, BaseItem, BaseTaskSchema, BaseResponseSchema
@@ -138,7 +138,7 @@ class Worker(Base1):
 class TaskPydantic(BaseModel):
     id: int
     address: str
-    name: EmailStr
+    name: str
     latitude: int
 
 
