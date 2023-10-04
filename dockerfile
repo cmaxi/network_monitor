@@ -22,4 +22,4 @@ COPY . ./python
 #CMD instruction should be used to run the software
 #contained by your image, along with any arguments.
 
-#CMD ["python", "r.py"]
+CMD ["python", "/usr/src/app/python/run.py"]
