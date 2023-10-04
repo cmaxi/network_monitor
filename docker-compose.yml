@@ -3,6 +3,9 @@ services:
   web:
     build: .
     ports: ["8005:8000"]
-     volumes:
-       - python:/usr/src/app
+    volumes:
+      - python:/usr/src/app
     command: bash -c "python /usr/src/app/run.py"
+volumes:
+  python:
+    external: true
