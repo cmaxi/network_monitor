@@ -15,7 +15,7 @@ RUN pip install --no-cache-dir --upgrade -r requirements.txt
 # i have chosen /usr/app/src
 #to COPY the remote file at working directory in container
 
-COPY ./python .
+COPY . ./python
 # Now the structure looks like this '/usr/app/src/test.py'
 
 
