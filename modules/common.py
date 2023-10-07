@@ -22,9 +22,9 @@ def build_url(address, port, slug=False):
     Build url from address, port and optional slug.
     """
     if slug:
-        return "https://{}:{}/{}".format(address, port, slug)
+        return "http://{}:{}/{}".format(address, port, slug)
     else:
-        return "https://{}:{}/".format(address, port)
+        return "http://{}:{}/".format(address, port)
 
 def get_granularity(granularity):
     """Convert frequencies to milliseconds.

@@ -3,14 +3,15 @@ takes care of the connection to the database
 """
 from sqlalchemy.sql import func, exists
 import sqlalchemy as db
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker,joinedload
 import sqlite3 #  i have added this if you find better way to handle databases, you can remove it
 
 from settings import DATASTORE_DATABASE
-from modules.datastore.models import Response, Task, Address, Users, Worker, worker_has_task
+from modules.datastore.models import Response, Task, Address, Users, Worker, worker_has_task, HostStatus
 from modules.datastore.models import make_tables
 from modules.sql_connector import CommonSqlConnector
 from modules.datastore.data_validation import DataValidation
+import json
 
 class SqlOther(CommonSqlConnector):
     """
@@ -32,26 +33,50 @@ class SqlOther(CommonSqlConnector):
         """
         Sync worker - store responses and return tasks
         """
-        worker_id = self.get_worker(data["api"])
-
+        worker_id = self.get_worker(data.api)
         if worker_id is not None:
             with self.sessions.begin() as session:
-                for response in data["responses"]:
-                    result = Response(
-                        address=response["address"],
-                        time=response["time"],
-                        value=response["value"],
-                        task=response["task"],
-                        worker=worker_id
-                    )
-                    session.add(result)
+                if data.responses is not None:
+                    for response in data.responses:
+                        result = Response(
+                            address=response.address,
+                            time=response.time,
+                            value=response.value,
+                            task=response.task,
+                            worker=worker_id
+                        )
+                        session.add(result)
+                if data.hosts_availability is not None:
+                    for host in data.hosts_availability:
+                        result = HostStatus(
+                            address=host.address,
+                            time_from=host.time_from,
+                            time_to=host.time_to,
+                            available=host.available,
+                            worker_id=worker_id
+                        )
+                        session.add(result)
                     # TODO alter task last update
 
-                ##tasks = session.query.filter(Task.worker == worker_id)
-                tasks = session.query(Task).join(Task, Worker.task).filter(Worker.id == worker_id)
-                #tasks = session.query(Worker).filter(Worker.task.contains(task)).all()
-                #tasks = session.query(Task).filter(Task.worker_id == worker_id)
-                return [item.__dict__ for item in tasks.all()] # TODO make custom function in Task class (instead of __dict__)
+                tasks = session.query(Task).join(Task, Worker.task).filter(Worker.id == worker_id).join(Address, Task.address_id == Address.id)
+
+
+                # zbesila struktura je tady z duvodu, ze potrebuji dat task.address.address na stejnou uroven jako je treba id
+                results = [
+                    {
+                        'id': task.id,
+                        'task': task.task,
+                        'running': task.running,
+                        'last_run': task.last_run,
+                        'hide': task.hide,
+                        'frequency': task.frequency,
+                        'address': task.address.address
+                    }
+                    for task in tasks
+                ]
+                return results
+
+#                return [item.__dict__ for item in tasks.all()] # TODO make custom function in Task class (instead of __dict__)
 
     def get_worker(self, token):
         try:

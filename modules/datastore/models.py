@@ -5,7 +5,7 @@ TODO: add Worker model - to store its GPS
 """
 from __future__ import annotations
 from typing import List
-from sqlalchemy import ForeignKey
+from sqlalchemy import ForeignKey, func
 from sqlalchemy.orm import declarative_base
 from sqlalchemy import Column, String, Float, Integer, Boolean
 from sqlalchemy.orm import Mapped
@@ -19,6 +19,10 @@ from pydantic import BaseModel
 from modules.models import BaseTask, BaseResponse, BaseItem, BaseTaskSchema, BaseResponseSchema
 
 Base = declarative_base()
+
+class Base1(DeclarativeBase):
+    pass
+
 
 class Response(BaseResponse, Base):
     """
@@ -57,20 +61,28 @@ class Task(BaseTask, Base):
     hide = Column(Boolean)
 """
 
+class HostStatus(Base):
+    __tablename__ = 'host_status'
+    id = Column(Integer, primary_key=True)
+    worker_id = Column(Integer)
+    address = Column(String(15))
+    time_from = Column(Integer)
+    time_to = Column(Integer)
+    available = Column(Boolean)
 
-class Address(BaseItem, Base):
+class Address(Base1, BaseItem):
     """
     IP address meta data
     """
     __tablename__ = 'addresses'
-
     name = Column(String(100))
     location = Column(String(100))
     latitude = Column(Float)
     longitude = Column(Float)
     note = Column(String(500))
     color = Column(String(10))
-    runing = Column(Boolean)
+#    runing = Column(Boolean)    
+    task = relationship("Task", back_populates="address")
 
     def values(self):
         """
@@ -106,9 +118,6 @@ class Users(Base):
             "role": self.role,
         }
 
-class Base1(DeclarativeBase):
-    pass
-
 worker_has_task = Table(
     "worker_has_task",
     Base1.metadata,
@@ -135,25 +144,19 @@ class Worker(Base1):
 
         }
 
-class TaskPydantic(BaseModel):
-    id: int
-    address: str
-    name: str
-    latitude: int
-
-
-class Task(Base1,BaseTask):
+class Task(Base1, BaseTask):
     """
     
     """
     __tablename__ = 'tasks'
     id: Mapped[int] = mapped_column(primary_key=True)
-    address = Column(String(100))
-    name = Column(String(100))
-    latitude = Column(Float)
-    longitude = Column(Float)
-    color = Column(String(10))
-    runing = Column(Boolean)
+    address_id = mapped_column(ForeignKey("addresses.id"))
+    address = relationship("Address", back_populates="task")
+ #   name = Column(String(100))
+#    latitude = Column(Float)
+#    longitude = Column(Float)
+#    color = Column(String(10))
+    running = Column(Boolean)
     hide = Column(Boolean)
 
     def values(self):
@@ -162,13 +165,17 @@ class Task(Base1,BaseTask):
         """
         return {
             "id": self.id,
-            "address": self.address,
-            "name": self.name,
-            "location": self.location,
-            "latitude": self.latitude,
-            "longitude": self.longitude,
-            "note": self.note,
-            "color": self.color,
+            "running": self.running,
+            "hide": self.hide,
+            "address": self.address.address,
+            "task": self.task,
+            "frequency": self.frequency,
+            "name": self.address.name,
+            "location": self.address.location,
+            "latitude": self.address.latitude,
+            "longitude": self.address.longitude,
+            "note": self.address.note,
+            "color": self.address.color,
         }
 
 class UserHasWorker(Base):
@@ -197,3 +204,22 @@ def make_tables(engine):
     """
     Base.metadata.create_all(engine, checkfirst=True)
     Base1.metadata.create_all(engine, checkfirst=True)
+
+def init_data(engine):
+    """
+    with engine.begin() as session:
+        #usersCount = session.query(func.count(Users.id))
+        #return usersCount
+
+    with engine.begin() as session:
+        engine.add(Users(username='admin', hashed_password='$2b$12$7Ss7bF7YgMdcLD0Ax2udbuCRUAKoQ8u.ebPUdpwHAWiWgrzLoUTgK', role='1'))
+
+    result = Worker(
+        name='initWorker',
+        token='9d207bf0-10f5-4d8f-a479-22ff5aeff8d1'
+    )
+
+    with engine.begin() as session:
+        engine.add(result)
+    """
+    return {"status": "200"}

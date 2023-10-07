@@ -9,7 +9,7 @@ app = FastAPI()
 
 @app.route('/{_:path}')
 async def https_redirect(request: Request):
-    return RedirectResponse(request.url.replace(scheme='https'))
+    return RedirectResponse(request.url.replace(scheme='http'))
 
 if __name__ == '__main__':
     uvicorn.run('https_redirect:app', port=8100, host='0.0.0.0')

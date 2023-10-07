@@ -20,7 +20,7 @@ class DatastoreSqlConnector(CommonSqlConnector):
         """
         Init the sql connector (connect, prepare tables).
         """
-        engine = db.create_engine('sqlite:///{}'.format(DATASTORE_DATABASE), echo=False)
+        engine = db.create_engine('sqlite:///{}'.format(DATASTORE_DATABASE), echo=True)
         make_tables(engine)
         self.sessions = sessionmaker(engine)
         
@@ -200,7 +200,9 @@ class DatastoreSqlConnector(CommonSqlConnector):
         """
         Sync worker - store responses and return tasks
         """
+        print("syncWorker")
         with self.sessions.begin() as session:
+            worker_id = session.query(Worker).filter(Worker.token == data["api"])
             for response in data["responses"]:
                 result = Response(
                     address=response["address"],
@@ -211,6 +213,18 @@ class DatastoreSqlConnector(CommonSqlConnector):
                 )
                 session.add(result)
                 # TODO alter task last update
+
+            print(str(data))
+            for hostStatus in data["hosts_availability"]:
+                print(str(hostStatus))
+                result = HostStatus(
+                    worker_id = data["worker"]
+                    address = data["address"]
+                    time_from = data["time_from"]
+                    time_to = data["time_to"]
+                    available = data["available"]
+                )
+                session.add(result)
 
             tasks = session.query(Task).filter(Task.worker == data["worker"])
             return [item.__dict__ for item in tasks.all()] # TODO make custom function in Task class (instead of __dict__)

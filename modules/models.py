@@ -24,15 +24,19 @@ class BaseResponseSchema(BaseModel):
     time: int
     value: int
 
-class BaseTask(BaseItem):
+class BaseTask():
     """
     Definition of task.
     """
     __tablename__ = 'tasks'
-
+    id = Column(Integer, primary_key=True)
     task = Column(String(100))
     frequency = Column(String(5))
     last_run = Column(Integer, default=0)
+
+class BaseTaskWorker(BaseTask):
+    address = Column(String(100))
+
 
 class BaseTaskSchema(BaseModel):
     task: str

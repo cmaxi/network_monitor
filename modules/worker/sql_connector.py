@@ -5,7 +5,7 @@ import sqlalchemy as db
 from sqlalchemy.orm import sessionmaker
 
 from settings import WORKER_DATABASE
-from modules.worker.models import Response, Task
+from modules.worker.models import Response, Task, HostStatus
 from modules.worker.models import make_tables
 from modules.sql_connector import CommonSqlConnector
 from modules.common import ms_time
@@ -20,9 +20,12 @@ class WorkerSqlConnector(CommonSqlConnector):
         Init the sql connector (connect, prepare tables).
         """
         self.worker = worker
-        engine = db.create_engine(f'sqlite:///{WORKER_DATABASE}', echo=False)
-        make_tables(engine)
-        self.sessions = sessionmaker(engine)
+        try:
+            engine = db.create_engine(f'sqlite:///{WORKER_DATABASE}', echo=False)
+            make_tables(engine)
+            self.sessions = sessionmaker(engine)
+        except:
+            raise SystemExit('Sqlite is not available, shutting down worker')
 
     def clear_all_tables(self):
         """
@@ -38,10 +41,13 @@ class WorkerSqlConnector(CommonSqlConnector):
         with self.sessions.begin() as session:
             task = session.query(Task).filter(
                 Task.address == task_data["address"],
-                Task.task == task_data["task"]
+                Task.task == task_data["task"],
             ).first()
             task.next_run = task_data["next_run"]
             task.last_run = task_data["last_run"]
+            task.available = task_data["available"]
+            if not task.available_from:
+                task.available_from = task_data["last_run"]
 
     def get_tasks(self):
         """
@@ -62,14 +68,67 @@ class WorkerSqlConnector(CommonSqlConnector):
             task=response["task"],
             synced=False,
         )
+
         with self.sessions.begin() as session:
+            query = session.query(Task).filter(Task.address == response["address"]).first()
+            print("availability: " + str(query.available))
+            query2 = session.query(Response).filter(Response.address == response["address"]).order_by(Response.id.desc()).first()
+            if query2:
+                lastValue =  query2.sync_values()["value"]
+                newValue = response["value"]
+
+                # Pokud se od posledniho pingu zmenila odezva, pak zapisu do DB
+                if (lastValue == -1 and newValue != -1) or (lastValue != -1 and newValue == -1):
+                    print("availability podminka: " + str(query.available))
+                    print("lastValue: " + str(lastValue) + " new value: " + str(newValue))
+                    result_host = HostStatus(
+                        address=response["address"],
+                        time_from=query.available_from,
+                        time_to=response["time"],
+                        available=query.available,
+                    )
+                    query.available_from = response["time"]
+                    session.add(result_host)  
             session.add(result)
 
     def reset_tasks(self):
-        """Reset tasks times on startup of application.
+        """
+        Reset tasks times on startup of application.
         """
         with self.sessions.begin() as session:
             session.query(Task).update({Task.last_run: 0, Task.next_run: 0})
+    
+    def createAvailable(self, task, response):
+        """
+        Available row not exist, than create
+        usually when it receives a new task, or at startup
+        """
+        available = False
+        if response != -1:
+            available = True
+
+        result = HostStatus(
+            address=task["address"],
+            time_from=task["last_run"],
+            available=available,
+        )
+        with self.sessions.begin() as session:
+            session.add(result)
+        
+        # Pokud neexistuje available, vytvorim novy zaznam v tabulce HostStatus
+        # TODO: musim zkontrolovat, jestli neexistuje uz nejaky zaznam s neuzavrenym okenkem
+        """
+        if task["available"] == None:
+            with self.sessions.begin() as session:
+                session.add(result)
+        else:
+            with self.sessions.begin() as session:
+                query = session.query(HostStatus).filter(HostStatus.address == task["address"], HostStatus.time_to == "").first()
+                if query:
+                    if available != query["available"]:
+                        query.time_to = task["last_run"]  
+                        session.add(result)                  
+        """    
 
     def presync(self):
         """Function called before synchronization with datastore
@@ -79,8 +138,13 @@ class WorkerSqlConnector(CommonSqlConnector):
         with self.sessions.begin() as session:
             query = session.query(Response).filter(Response.synced == False)
             return [item.sync_values() for item in query.all()]
+    
+    def presyncHosts(self):
+        with self.sessions.begin() as session:
+            query = session.query(HostStatus).filter(HostStatus.synced == False)
+            return [item.sync_values() for item in query.all()]
 
-    def postsync(self, tasks, responses):
+    def postsync(self, tasks, responses, host_availability):
         """Fu r synchronization with datastore
 
         Tasks:
@@ -96,6 +160,11 @@ class WorkerSqlConnector(CommonSqlConnector):
                 id_list = [item["id"] for item in responses]
                 session.query(Response).filter(
                     Response.id.in_(id_list)).update({Response.synced: True})
+
+            if host_availability:
+                id_list = [item["id"] for item in host_availability]
+                session.query(HostStatus).filter(
+                    Response.id.in_(id_list)).update({HostStatus.synced: True})
 
             for incoming_task in tasks:
                 existing_task = session.query(Task).filter(
