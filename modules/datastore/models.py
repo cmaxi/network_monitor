@@ -15,7 +15,6 @@ from sqlalchemy.orm import relationship
 from sqlalchemy import Table
 from pydantic import BaseModel
 
-
 from modules.models import BaseTask, BaseResponse, BaseItem, BaseTaskSchema, BaseResponseSchema
 
 Base = declarative_base()
@@ -176,6 +175,10 @@ class Task(Base1, BaseTask):
             "longitude": self.address.longitude,
             "note": self.address.note,
             "color": self.address.color,
+            "timeout": self.timeout,
+            "retry": self.retry,
+            "treshold": self.treshold,
+            "retry_data": self.retry_data,
         }
 
 class UserHasWorker(Base):
@@ -196,7 +199,6 @@ class UserHasWorker(Base):
             "id": self.id,
 
         }
-
 
 def make_tables(engine):
     """

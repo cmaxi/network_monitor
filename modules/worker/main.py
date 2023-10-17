@@ -14,7 +14,6 @@ from modules.common import get_granularity, build_url
 from modules.common import ms_time, ms_sleep
 from fastapi.security import APIKeyHeader, APIKeyQuery
 import json
-
 from settings import worker_log_config
 
 class Worker():
@@ -69,6 +68,8 @@ class Worker():
             wait_time = task["next_run"] - now
             #TODO opakuje se volani, viz komment
             #print("nextRun: " +  str(task["next_run"]) + " rozdil: " + str(wait_time))
+            if(wait_time < 0):
+                wait_time = 0
         else:
             wait_time = 0
 
@@ -77,19 +78,24 @@ class Worker():
         self.sql_conn.update_task(task)
         ms_sleep(wait_time)
         if task["task"] == "ping":
-            response = get_response_ping(task["address"])
-            print("response " + str(response))
-            if response != -1:
+            response = get_response_ping(task["address"], task["timeout"])
+            
+            #nastavim status available, bud je nedostupny, nebo nesplnuje treshold
+            if response != -1 and response < task["treshold"]:
                 task["available"] = True
             else:
                 task["available"] = False
+
             task["value"] = response
             #self.__availability(task, response)
         else:
             logging.warning("Unknown task type: {}".format(task["task"]))
             return
         task["time"] = task["last_run"]
-        self.sql_conn.add_response(task)
+        retryCykle = self.sql_conn.add_response(task)
+        
+        if retryCykle:
+            task["next_run"] = task["last_run"] + task["retry_time"]
         self.sql_conn.update_task(task)
         ms_sleep(100)
 
@@ -105,6 +111,10 @@ class Worker():
         """
         threading.Thread(target=self.__io_loop, daemon=True).start()
         logging.info("Worker started.")
+
+        ## Check hostStatus
+        self.sql_conn.initTasks()
+
         while True:
             tasks = self.sql_conn.get_tasks()
             now = ms_time()

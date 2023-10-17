@@ -46,7 +46,7 @@ class OAuth2:
 
     oauth2_scheme = OAuth2PasswordBearer(
         tokenUrl="token",
-        scopes={"reader": "Reading information", "writer": "Writing information"},
+        scopes={"1": "administrator", "2": "viewer"},
     )
     sql_connection = SqlConnection()
     session = sql_connection.getSession()
@@ -110,13 +110,25 @@ class OAuth2:
         user = oauthClass.get_user(username=token_data.username)
         if user is None:
             raise credentials_exception
+
+        if any(scope in security_scopes.scopes for scope in str(token_data.scopes)):
+            return user
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Not enough permissions",
+                headers={"WWW-Authenticate": authenticate_value},
+            )
+        """       
         for scope in security_scopes.scopes:
+            print("scope: " + scope)
             if scope not in str(token_data.scopes):
                 raise HTTPException(
                     status_code=status.HTTP_401_UNAUTHORIZED,
                     detail="Not enough permissions",
                     headers={"WWW-Authenticate": authenticate_value},
                 )
+        """
         return user
 
 

@@ -33,6 +33,11 @@ class BaseTask():
     task = Column(String(100))
     frequency = Column(String(5))
     last_run = Column(Integer, default=0)
+    timeout = Column(Integer, default=1)
+    retry = Column(Integer, default=0)
+    retry_time = Column(Integer, default=1000)
+    treshold = Column(Integer, default=50)
+    retry_data = Column(String(300))
 
 class BaseTaskWorker(BaseTask):
     address = Column(String(100))

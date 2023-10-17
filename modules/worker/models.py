@@ -27,8 +27,9 @@ class Task(BaseTaskWorker, Base):
     """
     active = Column(Integer)
     next_run = Column(Integer, default=0)
-    available = Column(Boolean, default=None)
+    available = Column(Boolean, default=0)
     available_from = Column(Integer)
+    retry_count = Column(Integer, default=0)
 
     def values(self):
         return {
@@ -39,7 +40,13 @@ class Task(BaseTaskWorker, Base):
             "next_run": self.next_run,
             "last_run": self.last_run,
             "available": self.available,
-            "available_from": self.available_from
+            "available_from": self.available_from,
+            "treshold": self.treshold,
+            "timeout": self.timeout,
+            "retry": self.retry,
+            "retry_count": self.retry_count,
+            "retry_time": self.retry_time,
+            "retry_data": self.retry_data
         }
 
 

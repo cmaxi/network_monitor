@@ -74,6 +74,7 @@ class SqlAddress(CommonSqlConnector):
         """
         Delete address if exists - according ip address
         """
+        print("address: " + str(address_data.address))
         try:
             with self.sessions.begin() as session:
                 address = session.query(Address).filter(Address.address == address_data.address).first()
@@ -82,9 +83,9 @@ class SqlAddress(CommonSqlConnector):
                             status_code=400,
                             detail="Address not found"
                     )
-                else:
-                    session.delete(address)
-        except:
+        except HTTPException as http_exc:
+            raise http_exc
+        except Exception:
             raise HTTPException(
                 status_code=500,
                 detail="Database unknown error"
@@ -94,7 +95,6 @@ class SqlAddress(CommonSqlConnector):
         """
         Get information about IP address
         """
-        print(address)
         with self.sessions.begin() as session:
             address_row = session.query(Address).filter(Address.address == address).first()
             if address_row is None:

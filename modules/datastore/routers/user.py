@@ -32,7 +32,7 @@ async def read_users_me(current_user: User = Depends(oauth2.get_current_active_u
     return current_user
 
 @router.post("/create")
-async def add_user(username: str, password: str, role: int):
+async def add_user(username: str, password: str, role: int,current_user: User = Security(oauth2.get_current_active_user, scopes=["1"])):
     hashed_password = oauth2.get_password_hash(password)
     sqlUser.create(username=username, hashed_password=hashed_password, role=role)
 

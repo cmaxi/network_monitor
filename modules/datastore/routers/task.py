@@ -37,35 +37,35 @@ async def associate(data: TaskAssociate, current_user: User = Security(oauth2.ge
     return sqlTask.associate(data)
 
 
-@router.delete("/{task_id}") #delete address from task table and responses of address
+@router.delete("/{task_id}", status_code=200) #delete address from task table and responses of address
 async def delete(task_id: int,current_user: User = Security(oauth2.get_current_active_user, scopes=["1"])):
     """
         delete task by id
     """
     return sqlTask.delete(task_id)
 
-@router.delete("/associate-delete") #delete address from task table and responses of address
+@router.delete("/associate-delete", status_code=200) #delete address from task table and responses of address
 async def delete_association(data:TaskAssociate,current_user: User = Security(oauth2.get_current_active_user, scopes=["1"])):
     """
         delete association between worker and task
     """
     return sqlTask.associate_delete(data)
 
-@router.put("/")#update tasks dont remove data
+@router.put("/", status_code=200)#update tasks dont remove data
 async def update_task(data: TaskOut, current_user: User = Security(oauth2.get_current_active_user, scopes=["1"])):
     """
         update task
     """
     return sqlTask.update(data)
 
-@router.get("/pause/{task_id}") #Pause task
+@router.get("/pause/{task_id}", status_code=200) #Pause task
 async def pause(task_id:int, current_user: User = Security(oauth2.get_current_active_user, scopes=["1"])):
     """
         pause task
     """
     return sqlTask.pause(task_id)
 
-@router.get("/active/{task_id}") #Activate task
+@router.get("/active/{task_id}", status_code=200) #Activate task
 async def active(task_id:int, current_user: User = Security(oauth2.get_current_active_user, scopes=["1"])):
     """
         activate task
@@ -73,35 +73,35 @@ async def active(task_id:int, current_user: User = Security(oauth2.get_current_a
     return sqlTask.active(task_id)
 
 
-@router.get("/hide{task_id}") #Hide task
+@router.get("/hide{task_id}", status_code=200) #Hide task
 async def hide(task_id:int, current_user: User = Security(oauth2.get_current_active_user, scopes=["1"])):
     """
         hide task
     """
     return sqlTask.hide(task_id)
 
-@router.get("/unhide{task_id}") #unhide task
+@router.get("/unhide{task_id}", status_code=200) #unhide task
 async def unhide(task_id:int, current_user: User = Security(oauth2.get_current_active_user, scopes=["1"])):
     """
         unhide task
     """
     return sqlTask.unhide(task_id)
 
-@router.get("/workers-task/{worker_id}")
+@router.get("/workers-task/{worker_id}", status_code=200)
 def get_worker_tasks(worker_id:int,current_user: User = Security(oauth2.get_current_active_user, scopes=["1"])):
     """
     Return all tasks for given worker
     """
     return sqlTask.WorkersTask(worker_id)
 
-@router.get("/active-tasks/{worker_id}")
+@router.get("/active-tasks/{worker_id}", status_code=200)
 def get_active_task(worker_id:int,current_user: User = Security(oauth2.get_current_active_user, scopes=["1"])):
     """
     Return active tasks for given worker
     """
     return sqlTask.getActiveTasks(worker_id)
 
-@router.get("/")
+@router.get("/", status_code=200)
 def get_all_tasks(current_user: User = Security(oauth2.get_current_active_user, scopes=["1"])):
     """
     Return all tasks

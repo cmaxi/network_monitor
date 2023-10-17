@@ -61,7 +61,7 @@ class SqlOther(CommonSqlConnector):
                 tasks = session.query(Task).join(Task, Worker.task).filter(Worker.id == worker_id).join(Address, Task.address_id == Address.id)
 
 
-                # zbesila struktura je tady z duvodu, ze potrebuji dat task.address.address na stejnou uroven jako je treba id
+                # TODO: predelat aby byl vystupni model definovam v models.py
                 results = [
                     {
                         'id': task.id,
@@ -70,7 +70,11 @@ class SqlOther(CommonSqlConnector):
                         'last_run': task.last_run,
                         'hide': task.hide,
                         'frequency': task.frequency,
-                        'address': task.address.address
+                        'address': task.address.address,
+                        'timeout': task.timeout,
+                        'treshold': task.treshold,
+                        'retry': task.retry,
+                        'retry_time': task.retry_time
                     }
                     for task in tasks
                 ]

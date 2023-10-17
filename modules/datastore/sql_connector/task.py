@@ -5,6 +5,7 @@ from modules.datastore.schema import TaskIn, TaskOut, TaskAssociate
 from sqlalchemy.sql import func, exists
 from fastapi import HTTPException
 from sqlalchemy.exc import IntegrityError
+import json
 
 
 class SqlTask(CommonSqlConnector):
@@ -24,7 +25,8 @@ class SqlTask(CommonSqlConnector):
             frequency=data.frequency,
             task=data.task,
             running=data.running,
-            hide=data.hide
+            hide=data.hide,
+            retry_data=json.dumps(data.retry_data)
         )
 
         with self.sessions.begin() as session:
@@ -33,11 +35,8 @@ class SqlTask(CommonSqlConnector):
                 session.add(result)
                 session.flush()
                 session.refresh(result)
-                result = TaskOut(
-                    id = result.id,
-                    **data.dict()
-                )
-                return result
+
+                return result.values()
             else:
                 raise HTTPException(
                     status_code=400,

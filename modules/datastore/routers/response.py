@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException,Security
 from modules.datastore.sql_connector import SqlConnection, SqlResponse
 from typing import Optional
+from modules.datastore.schema import ResponseGet, ResponseGetWorker, ResponseAdd
 
 
 router = APIRouter(
@@ -16,42 +17,50 @@ sql_connection = SqlConnection()
 session = sql_connection.getSession()
 sqlResponse = SqlResponse(session)
 
-@router.get("/getAll")#get all responses for graph
-def get_avrg_response(time_from: Optional[str] = None, time_to: Optional[str] = None, current_user: User = Security(oauth2.get_current_active_user, scopes=["1"])):
+@router.post("/", status_code=200)
+def add_response(data: ResponseAdd, current_user: User = Security(oauth2.get_current_active_user, scopes=["1","2"])):
+    """
+    create new row (response) into db
+    """
+    return sqlResponse.add(data)
+
+@router.post("/get-all", status_code=200)#get all responses for graph
+def get_all_responses(data: ResponseGet, current_user: User = Security(oauth2.get_current_active_user, scopes=["1","2"])):
     """
         generate JSON of all response times by time
     """
-    return sqlResponse.get_all(time_from, time_to)
+    return sqlResponse.get_all(data)
 
-@router.post("/deleteAll")#delete all responses
+@router.delete("/delete-all", status_code=200)#delete all responses
 async def delete_responses(current_user: User = Security(oauth2.get_current_active_user, scopes=["1"])):
     """
         generate JSON of all response times by time
     """
     return sqlResponse.delete_all()
 
-@router.get("/getAverage")
-def get_avrg_response(date_from: Optional[str] = None, date_to: Optional[str] = None):
+@router.delete("/{address}", status_code=200)#delete all responses
+async def delete_responses(address: str, current_user: User = Security(oauth2.get_current_active_user, scopes=["1"])):
+    """
+        generate JSON of all response times by time
+    """
+    return sqlResponse.delete_address(address)
+
+
+@router.post("/get-average", status_code=200)
+def get_avrg_response(data: ResponseGet, current_user: User = Security(oauth2.get_current_active_user, scopes=["1", "2"])):
     """
         generate JSON of average response time of each ip addresses,
         dateFrom and dateTo are optional
     """
-    return sqlResponse.get_avrg_all(date_from, date_to)
+    return sqlResponse.get_avrg_all(data)
 
-@router.get("/getSummary")
-def get_response_summary(worker: Optional[str] = None, time_from: Optional[str] = None, time_to: Optional[str] = None, current_user: User = Security(oauth2.get_current_active_user, scopes=["1"])):
+@router.post("/get-summary", status_code=200)
+def get_response_summary(data: ResponseGetWorker, current_user: User = Security(oauth2.get_current_active_user, scopes=["1","2"])):
     """
     get info is detailed list of addresses (generate: number of addr records,
-    first time testing, last time testing and average responsing time)"""
-    return sqlResponse.get_summary(worker, time_from, time_to)
-
-@router.get("/add")
-def add_response(address, time, value, task, worker):
+    first time testing, last time testing and average responsing time)
     """
-    create new row (response) into db
-    """
-    sqlResponse.add(address, time, value, task, worker)
-    return {"status": True}
+    return sqlResponse.get_summary(data)
 
 
 
