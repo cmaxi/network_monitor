@@ -7,20 +7,26 @@ from __future__ import annotations
 from typing import List
 from sqlalchemy import ForeignKey, func
 from sqlalchemy.orm import declarative_base
-from sqlalchemy import Column, String, Float, Integer, Boolean
+from sqlalchemy import Column, String, Float, Integer, Boolean, TIMESTAMP
 from sqlalchemy.orm import Mapped
 from sqlalchemy.orm import mapped_column
 from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy.orm import relationship
 from sqlalchemy import Table
 from pydantic import BaseModel
+from sqlalchemy.sql import func
+
 
 from modules.models import BaseTask, BaseResponse, BaseItem, BaseTaskSchema, BaseResponseSchema
 
-Base = declarative_base()
+class Base(DeclarativeBase):
+    createdAt = Column(TIMESTAMP, server_default=func.now())
+    updatedAt = Column(TIMESTAMP, server_default=func.now(), onupdate=func.current_timestamp())
 
 class Base1(DeclarativeBase):
-    pass
+    createdAt = Column(TIMESTAMP, server_default=func.now())
+    updatedAt = Column(TIMESTAMP, server_default=func.now(), onupdate=func.current_timestamp())
+    
 
 
 class Response(BaseResponse, Base):
@@ -103,7 +109,7 @@ class Users(Base):
     """
     __tablename__ = 'users'
     id = Column(Integer, primary_key=True)
-    username = Column(String(100))
+    username = Column(String(100), unique=True)
     hashed_password = Column(String(100))
     role = Column(Integer)
 

@@ -3,6 +3,8 @@ from modules.datastore.models import Response, Task, Address, Users, Worker, wor
 from modules.datastore.data_validation import DataValidation
 from sqlalchemy.sql import func, exists
 from fastapi import HTTPException
+from sqlalchemy.exc import IntegrityError
+
 
 
 class SqlUser(CommonSqlConnector):
@@ -26,9 +28,14 @@ class SqlUser(CommonSqlConnector):
 
     def create(self, username, hashed_password, role):
             print(username, hashed_password, role)
-            with self.sessions.begin() as session:
-                    session.add(Users(username=username, hashed_password=hashed_password, role=role))
-            return {"status": "200"}
+            try:
+                with self.sessions.begin() as session:
+                        session.add(Users(username=username, hashed_password=hashed_password, role=role))
+            except IntegrityError as e:
+                raise HTTPException(
+                    status_code=400,
+                    detail="Username already exists"
+                )
 
     def get_hash(self, username):
         with self.sessions.begin() as session:

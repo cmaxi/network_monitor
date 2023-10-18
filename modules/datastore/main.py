@@ -137,7 +137,7 @@ async def make_report():
     Create and return html report.
     """
     worker = "default"
-    responses = sqlResponse.get_responses(worker=worker)
+    responses = sqlResponse.get_summary()
 
     df = old_report.responses2df(responses)
 

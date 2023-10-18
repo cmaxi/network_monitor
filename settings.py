@@ -18,7 +18,7 @@ LOG_FOLDER = "logs"
 
 DATASTORE_DATABASE_FILE = "datastore.db"
 DATASTORE_LOG_NAME = "datastore.log"
-DATASTORE_APP_ADDRESS = ("127.0.0.1", 8000)
+DATASTORE_APP_ADDRESS = ("0.0.0.0", 8000)
 
 WORKER_DATABASE_FILE = "worker.db"
 WORKER_LOG_NAME = 'worker.log'

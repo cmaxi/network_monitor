@@ -16,23 +16,23 @@ sql_connection = SqlConnection()
 session = sql_connection.getSession()
 sqlUser = SqlUser(session)
 
-@router.get("/")
+@router.get("/", status_code=200)
 async def read_items():
     return 2
 
-@router.get("/getHash")#get all responses for graph
+@router.get("/getHash", status_code=200)#get all responses for graph
 async def get_user_hash(username):
     """
         generate JSON of all response times by time
     """
     return sqlUser.get_hash(username)
 
-@router.get("/users/me/", response_model=User)
+@router.get("/users/me/", response_model=User, status_code=200)
 async def read_users_me(current_user: User = Depends(oauth2.get_current_active_user)):
     return current_user
 
 @router.post("/create")
-async def add_user(username: str, password: str, role: int,current_user: User = Security(oauth2.get_current_active_user, scopes=["1"])):
+async def add_user(username: str, password: str, role: int,current_user: User = Security(oauth2.get_current_active_user, scopes=["1"]), status_code=200):
     hashed_password = oauth2.get_password_hash(password)
     sqlUser.create(username=username, hashed_password=hashed_password, role=role)
 

@@ -1,5 +1,6 @@
-from sqlalchemy import Column, Integer, String
+from sqlalchemy import Column, Integer, String, TIMESTAMP
 from pydantic import BaseModel
+from sqlalchemy.sql import func
 
 class BaseItem():
     """
@@ -7,6 +8,8 @@ class BaseItem():
     """
     id = Column(Integer, primary_key=True)
     address = Column(String(100))
+    createdAt = Column(TIMESTAMP, server_default=func.now())
+    updatedAt = Column(TIMESTAMP, server_default=func.now(), onupdate=func.current_timestamp())
 
 
 class BaseResponse(BaseItem):
